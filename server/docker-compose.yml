@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - ecommerce-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ecommerce-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ecommerce-network
+
+  scylladb:
+    image: scylladb/scylla:5.4
+    container_name: scylladb
+    ports:
+      - "9042:9042"
+    command: --smp 1 --memory 512M
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  init-scylla:
+    image: scylladb/scylla:5.4
+    container_name: init-scylla
+    depends_on:
+      scylladb:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init.cql:/init/init.cql:ro
+      - ./scripts/init-scylla.sh:/init/init-scylla.sh:ro
+    entrypoint: ["sh", "/init/init-scylla.sh"]
+    restart: "no"
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  ecommerce-network:
+    driver: bridge
