@@ -1,24 +1,30 @@
 export interface Product {
-  id: string;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  description: string;
-  category: string;
-  rating: number;
-  reviews: number;
-  inStock: boolean;
-  discount?: number;
-  features: string[];
-  brand: string;
-  tags: string[];
+  Index: number;
+  Name: string;
+  Description: string;
+  Brand: string;
+  Category: string;
+  Price: number;
+  Currency: string;
+  Stock: number;
+  EAN: number;
+  Color: string;
+  Size: string;
+  Availability: string;
+  ShortDescription: string;
+  Image: string;
+  'Internal ID': string;
 }
 
-export interface ApiResponse<T> {
-  data: T;
+export interface ProductsResponse {
+  products: Product[];
   total: number;
   page: number;
   limit: number;
-  hasMore: boolean;
+  totalPages: number;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
 }

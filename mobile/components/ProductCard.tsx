@@ -1,156 +1,210 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { Star, ShoppingCart } from 'lucide-react-native';
-import { Product } from '@/types/Product';
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { ShoppingCart } from 'lucide-react-native';
+import { Product } from '@/types/product';
+import { useCart } from '@/contexts/CartContext';
 
 interface ProductCardProps {
   product: Product;
-  onPress: () => void;
-  size?: 'small' | 'medium' | 'large';
+  onPress?: () => void;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
+  const router = useRouter();
+  const { addItem } = useCart();
 
-export function ProductCard({ product, onPress, size = 'medium' }: ProductCardProps) {
-  const cardWidth = size === 'small' ? (screenWidth - 48) / 2 : screenWidth - 32;
-  const imageHeight = size === 'small' ? 120 : 180;
-  
+  const handlePress = () => {
+    if (onPress) {
+      onPress();
+    } else {
+      router.push(`/product/${product['Internal ID']}`);
+    }
+  };
+
+  const handleAddToCart = (event: any) => {
+    event.stopPropagation();
+    addItem(product);
+  };
+
+  const getAvailabilityColor = (availability: string) => {
+    switch (availability.toLowerCase()) {
+      case 'in stock':
+        return '#059669';
+      case 'backorder':
+        return '#D97706';
+      case 'out of stock':
+        return '#DC2626';
+      default:
+        return '#6B7280';
+    }
+  };
+
   return (
-    <TouchableOpacity 
-      style={[styles.card, { width: cardWidth }]} 
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={[styles.imageContainer, { height: imageHeight }]}>
-        <Image source={{ uri: product.image }} style={styles.image} />
-        {product.discount && (
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>{product.discount}% OFF</Text>
-          </View>
-        )}
+    <TouchableOpacity style={styles.card} onPress={handlePress}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ 
+            uri: product.Image.startsWith('http') 
+              ? product.Image 
+              : `https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg`
+          }}
+          style={styles.image}
+          resizeMode="cover"
+        />
+        <View style={styles.brandBadge}>
+          <Text style={styles.brandText}>{product.Brand}</Text>
+        </View>
       </View>
       
       <View style={styles.content}>
-        <Text style={styles.category}>{product.category}</Text>
-        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+        <Text style={styles.category}>{product.Category}</Text>
+        <Text style={styles.name} numberOfLines={2}>
+          {product.Name}
+        </Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {product.ShortDescription}
+        </Text>
         
-        <View style={styles.ratingContainer}>
-          <Star size={14} color="#F59E0B" fill="#F59E0B" />
-          <Text style={styles.rating}>{product.rating}</Text>
-          <Text style={styles.reviews}>({product.reviews})</Text>
+        <View style={styles.details}>
+          <Text style={styles.size}>Size: {product.Size}</Text>
+          <Text style={styles.color}>Color: {product.Color}</Text>
         </View>
         
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>${product.price}</Text>
-          {product.originalPrice && (
-            <Text style={styles.originalPrice}>${product.originalPrice}</Text>
-          )}
+        <View style={styles.footer}>
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>
+              ${product.Price} {product.Currency}
+            </Text>
+            <Text 
+              style={[
+                styles.availability,
+                { color: getAvailabilityColor(product.Availability) }
+              ]}
+            >
+              {product.Availability}
+            </Text>
+          </View>
+          
+          <TouchableOpacity
+            style={styles.addToCartButton}
+            onPress={handleAddToCart}
+          >
+            <ShoppingCart size={18} color="#ffffff" />
+          </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity style={styles.addToCartButton}>
-          <ShoppingCart size={16} color="#FFFFFF" />
-          <Text style={styles.addToCartText}>Add to Cart</Text>
-        </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
-}
+};
+
+export default ProductCard;
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
     shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   imageContainer: {
     position: 'relative',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    height: 200,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
-  discountBadge: {
+  brandBadge: {
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: '#EF4444',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 4,
   },
-  discountText: {
-    color: '#FFFFFF',
-    fontSize: 10,
+  brandText: {
+    color: '#ffffff',
+    fontSize: 12,
     fontWeight: '600',
   },
   content: {
-    padding: 12,
+    padding: 16,
   },
   category: {
     fontSize: 12,
     color: '#6B7280',
+    fontWeight: '500',
     marginBottom: 4,
   },
   name: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#111827',
     marginBottom: 8,
-    lineHeight: 18,
+    lineHeight: 20,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  rating: {
-    fontSize: 12,
-    color: '#1F2937',
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  reviews: {
-    fontSize: 12,
+  description: {
+    fontSize: 14,
     color: '#6B7280',
-    marginLeft: 4,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    lineHeight: 18,
     marginBottom: 12,
   },
-  price: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1F2937',
+  details: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  originalPrice: {
-    fontSize: 14,
+  size: {
+    fontSize: 12,
     color: '#6B7280',
-    textDecorationLine: 'line-through',
-    marginLeft: 8,
+  },
+  color: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceContainer: {
+    flex: 1,
+  },
+  price: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  availability: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   addToCartButton: {
-    backgroundColor: '#3B82F6',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#2563EB',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  addToCartText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-    marginLeft: 4,
+    alignItems: 'center',
   },
 });
