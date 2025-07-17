@@ -1,118 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { ShoppingBag, TrendingUp, Star } from 'lucide-react-native';
-import { ApiService } from '@/services/api';
-import { Product } from '@/types/Product';
-import { ProductCard } from '@/components/ProductCard';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Menu, Bell } from 'lucide-react-native';
+import BurgerMenu from '@/components/BurgerMenu';
+import ImageSlider from '@/components/ImageSlider';
+import ProductCard from '@/components/ProductCard';
+import { Product } from '@/types/product';
+import { productApi } from '@/services/api';
 
-export default function HomeScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
+export default function HomePage() {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [latestProducts, setLatestProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const router = useRouter();
 
-  const loadProducts = async () => {
+  // Mock featured images for slider
+  const featuredImages = [
+    'https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg',
+    'https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg',
+    'https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg',
+  ];
+
+  useEffect(() => {
+    loadLatestProducts();
+  }, []);
+
+  const loadLatestProducts = async () => {
     try {
       setLoading(true);
-      const data = await ApiService.getHomeProducts();
-      setProducts(data);
+      // Mock data since backend is separate
+      const mockProducts: Product[] = [
+        {
+          Index: 1,
+          Name: "Thermostat Drone Heater",
+          Description: "<div><p><strong>Thermostat Drone Heater</strong> is a top product in our <em>Kitchen Appliances</em> category.</p><p>Price: <span style=\"color:green;\">$74</span> (USD)</p><p>Brand: Bradford-Yu</p><p>Available in color: <span style=\"color:orchid;\">Orchid</span>, size: Medium</p><p>Stock status: backorder, 139 units left.</p><p>EAN: 8619793560985</p></div>",
+          Brand: "Bradford-Yu",
+          Category: "Kitchen Appliances",
+          Price: 74,
+          Currency: "USD",
+          Stock: 139,
+          EAN: 8619793560985,
+          Color: "Orchid",
+          Size: "Medium",
+          Availability: "backorder",
+          ShortDescription: "Consumer approach woman us those star.",
+          Image: "https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg",
+          "Internal ID": "6ce4b628-2bcc-4829-8c64-b3a71bf09a60"
+        },
+        {
+          Index: 2,
+          Name: "Smart Bluetooth Speaker",
+          Description: "<div><p><strong>Smart Bluetooth Speaker</strong> with premium sound quality and voice control.</p><p>Price: <span style=\"color:green;\">$89</span> (USD)</p><p>Brand: AudioTech</p><p>Available in color: <span style=\"color:black;\">Black</span>, size: Large</p><p>Stock status: in stock, 45 units left.</p></div>",
+          Brand: "AudioTech",
+          Category: "Electronics",
+          Price: 89,
+          Currency: "USD",
+          Stock: 45,
+          EAN: 1234567890123,
+          Color: "Black",
+          Size: "Large",
+          Availability: "in stock",
+          ShortDescription: "High-quality sound with smart features.",
+          Image: "https://images.pexels.com/photos/267350/pexels-photo-267350.jpeg",
+          "Internal ID": "2ce4b628-2bcc-4829-8c64-b3a71bf09a61"
+        },
+        {
+          Index: 3,
+          Name: "Ergonomic Office Chair",
+          Description: "<div><p><strong>Ergonomic Office Chair</strong> designed for comfort and productivity.</p><p>Price: <span style=\"color:green;\">$299</span> (USD)</p><p>Brand: ComfortSeating</p><p>Available in color: <span style=\"color:gray;\">Gray</span>, size: Medium</p><p>Stock status: in stock, 20 units left.</p></div>",
+          Brand: "ComfortSeating",
+          Category: "Furniture",
+          Price: 299,
+          Currency: "USD",
+          Stock: 20,
+          EAN: 9876543210987,
+          Color: "Gray",
+          Size: "Medium",
+          Availability: "in stock",
+          ShortDescription: "Perfect for long working hours.",
+          Image: "https://images.pexels.com/photos/163064/play-stone-network-networked-interactive-163064.jpeg",
+          "Internal ID": "3ce4b628-2bcc-4829-8c64-b3a71bf09a62"
+        },
+      ];
+      
+      setLatestProducts(mockProducts);
+      
+      // Uncomment when backend is ready
+      // const products = await productApi.getLatestProducts(10);
+      // setLatestProducts(products);
     } catch (error) {
       console.error('Error loading products:', error);
+      Alert.alert('Error', 'Failed to load products. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const onRefresh = async () => {
+  const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    await loadProducts();
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    loadProducts();
+    loadLatestProducts().finally(() => setRefreshing(false));
   }, []);
-
-  const navigateToProduct = (productId: string) => {
-    router.push(`/details?id=${productId}`);
-  };
-
-  const navigateToList = () => {
-    router.push('/list');
-  };
-
-  const renderProduct = ({ item }: { item: Product }) => (
-    <ProductCard 
-      product={item} 
-      onPress={() => navigateToProduct(item.id)}
-      size="small"
-    />
-  );
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        style={styles.content}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.menuButton}
+          onPress={() => setMenuVisible(true)}
+        >
+          <Menu size={24} color="#374151" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>ShopApp</Text>
+        <TouchableOpacity style={styles.notificationButton}>
+          <Bell size={24} color="#374151" />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back!</Text>
-            <Text style={styles.title}>Discover Amazing Products</Text>
-          </View>
-          <TouchableOpacity style={styles.cartButton}>
-            <ShoppingBag size={24} color="#3B82F6" />
-          </TouchableOpacity>
+        <ImageSlider images={featuredImages} height={250} />
+        
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Latest Products</Text>
+          {loading ? (
+            <Text style={styles.loadingText}>Loading products...</Text>
+          ) : (
+            <View style={styles.productsContainer}>
+              {latestProducts.map((product) => (
+                <ProductCard key={product['Internal ID']} product={product} />
+              ))}
+            </View>
+          )}
         </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <TrendingUp size={24} color="#10B981" />
-            <Text style={styles.statNumber}>2.5k+</Text>
-            <Text style={styles.statLabel}>Products</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Star size={24} color="#F59E0B" />
-            <Text style={styles.statNumber}>4.8</Text>
-            <Text style={styles.statLabel}>Rating</Text>
-          </View>
-          <View style={styles.statCard}>
-            <ShoppingBag size={24} color="#8B5CF6" />
-            <Text style={styles.statNumber}>50k+</Text>
-            <Text style={styles.statLabel}>Orders</Text>
-          </View>
-        </View>
-
-        {/* Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Products</Text>
-          <TouchableOpacity onPress={navigateToList}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Products Grid */}
-        <FlatList
-          data={products}
-          renderItem={renderProduct}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          scrollEnabled={false}
-          contentContainerStyle={styles.productsContainer}
-        />
       </ScrollView>
+
+      <BurgerMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -122,83 +159,46 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  content: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  greeting: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginTop: 2,
-  },
-  cartButton: {
+  menuButton: {
     padding: 8,
-    backgroundColor: '#EBF4FF',
-    borderRadius: 12,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    marginTop: 1,
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#111827',
   },
-  statCard: {
+  notificationButton: {
+    padding: 8,
+  },
+  scrollView: {
     flex: 1,
-    alignItems: 'center',
+  },
+  section: {
     padding: 16,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    marginHorizontal: 4,
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1F2937',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 2,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    marginTop: 8,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  seeAll: {
-    fontSize: 14,
-    color: '#3B82F6',
-    fontWeight: '500',
-  },
-  row: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 16,
   },
   productsContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingBottom: 16,
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
