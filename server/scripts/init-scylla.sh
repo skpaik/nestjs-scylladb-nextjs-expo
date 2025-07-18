@@ -1,16 +1,16 @@
 #!/bin/sh
-set -e
 
 echo "⏳ Waiting for ScyllaDB to be ready..."
 
-# Wait until CQL port is open
-until cqlsh scylladb 9042 -e "DESCRIBE KEYSPACES;" > /dev/null 2>&1; do
-  echo "🔄 ScyllaDB not ready yet, retrying..."
+# Wait until ScyllaDB is up
+until cqlsh scylladb -e "SELECT now() FROM system.local" >/dev/null 2>&1; do
+  echo "⏳ Waiting for ScyllaDB..."
   sleep 2
 done
 
-echo "✅ ScyllaDB is ready. Running schema..."
+echo "✅ ScyllaDB is up. Running schema..."
 
-cqlsh scylladb 9042 -f /init/init.cql
+# Execute the schema file
+cqlsh scylladb -f /init/init.cql
 
-echo "✅ Keyspace and table created."
+echo "✅ Schema initialized successfully"

@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { CassandraService } from './cassandra.service';
 
-@Global() // Make it available globally
+@Global()
 @Module({
   providers: [CassandraService],
   exports: [CassandraService],

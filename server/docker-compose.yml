@@ -1,32 +1,8 @@
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: ecommerce-postgres
-    environment:
-      POSTGRES_DB: ecommerce
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
-    networks:
-      - ecommerce-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: ecommerce-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - ecommerce-network
-
   scylladb:
     image: scylladb/scylla:5.4
     container_name: scylladb
+    restart: unless-stopped
     ports:
       - "9042:9042"
     command: --smp 1 --memory 512M
@@ -48,9 +24,21 @@ services:
     entrypoint: ["sh", "/init/init-scylla.sh"]
     restart: "no"
 
-volumes:
-  postgres_data:
-  redis_data:
+
+  # You will add your NestJS app here later:
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-app
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - scylladb
+  #   networks:
+  #     - ecommerce-network
+  #   restart: unless-stopped
+
 
 networks:
   ecommerce-network:
