@@ -1,42 +1,46 @@
+// src/products/products.service.ts
+
 import { Injectable } from '@nestjs/common';
-import { CreateProductDto, ProductRow } from './dto/create-product.dto';
+import { v4 as uuidv4 } from 'uuid';
+import { CreateProductDto } from './dto/create-product.dto';
 import { CassandraService } from '../../cassandra/cassandra.service';
+import { Product } from './models/product-model';
 
 @Injectable()
 export class ProductsService {
   constructor(private readonly cassandraService: CassandraService) {}
-
-  async create(product: CreateProductDto) {
+  async createProduct(data: CreateProductDto): Promise<void> {
     const client = this.cassandraService.getClient();
 
     const query = `
       INSERT INTO products (
-        id, name, description, brand, category, price, currency, stock,
-        ean, color, size, availability, shortdescription, image
+        internal_id, seq, name, description, brand, category, price, currency,
+        stock, ean, color, size, availability, short_description, image
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
 
     const params = [
-      product['Internal ID'],
-      product.Name,
-      product.Description,
-      product.Brand,
-      product.Category,
-      product.Price,
-      product.Currency,
-      product.Stock,
-      product.EAN,
-      product.Color,
-      product.Size,
-      product.Availability,
-      product.ShortDescription,
-      product.Image,
+      uuidv4(),
+      data.seq,
+      data.name,
+      data.description,
+      data.brand,
+      data.category,
+      data.price,
+      data.currency,
+      data.stock,
+      data.ean,
+      data.color,
+      data.size,
+      data.availability,
+      data.shortDescription,
+      data.image,
     ];
 
     await client.execute(query, params, { prepare: true });
-    return { message: 'Product saved', id: product['Internal ID'] };
   }
 
+  /*
   async findAll(): Promise<CreateProductDto[]> {
     const client = this.cassandraService.getClient();
 
@@ -64,5 +68,31 @@ export class ProductsService {
 
       return dto;
     });
+  }
+  */
+
+  async findAll(): Promise<Product[]> {
+    const client = this.cassandraService.getClient();
+    const result = await client.execute('SELECT * FROM products');
+
+    return (result.rows as unknown as CreateProductDto[]).map(
+      (row): Product => ({
+        internalId: row.internalId,
+        seq: row.seq,
+        name: row.name,
+        description: row.description,
+        brand: row.brand,
+        category: row.category,
+        price: row.price,
+        currency: row.currency,
+        stock: row.stock,
+        ean: row.ean,
+        color: row.color,
+        size: row.size,
+        availability: row.availability,
+        shortDescription: row.shortDescription,
+        image: row.image,
+      }),
+    );
   }
 }

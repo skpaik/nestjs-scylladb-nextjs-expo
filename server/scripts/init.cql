@@ -6,19 +6,21 @@ CREATE KEYSPACE IF NOT EXISTS my_keyspace
 
 USE my_keyspace;
 
-CREATE TABLE IF NOT EXISTS products (
-                                        id UUID PRIMARY KEY,
-                                        name text,
-                                        description text,
-                                        brand text,
-                                        category text,
-                                        price double,
-                                        currency text,
-                                        stock int,
-                                        ean bigint,
-                                        color text,
-                                        size text,
-                                        availability text,
-                                        shortdescription text,
-                                        image text
+CREATE TABLE IF NOT EXISTS products
+(
+    internal_id       UUID PRIMARY KEY,
+    seq               INT,
+    name              TEXT,
+    description       TEXT,
+    brand             TEXT,
+    category          TEXT,
+    price             DOUBLE,
+    currency          TEXT,
+    stock             INT,
+    ean               BIGINT,
+    color             TEXT,
+    size              TEXT,
+    availability      TEXT,
+    short_description TEXT,
+    image             TEXT
 );

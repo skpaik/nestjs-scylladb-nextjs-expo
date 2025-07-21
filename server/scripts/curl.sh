@@ -1,20 +1,22 @@
 #!/bin/sh
 
+curl http://localhost:3000/products
+
 curl -X POST http://localhost:3000/products \
   -H "Content-Type: application/json" \
   -d '{
-    "Name": "Thermostat Drone Heater",
-    "Description": "<div><p><strong>Thermostat Drone Heater</strong> is a top product...</p></div>",
-    "Brand": "Bradford-Yu",
-    "Category": "Kitchen Appliances",
-    "Price": 74,
-    "Currency": "USD",
-    "Stock": 139,
-    "EAN": 8619793560985,
-    "Color": "Orchid",
-    "Size": "Medium",
-    "Availability": "backorder",
-    "ShortDescription": "Consumer approach woman us those star.",
-    "Image": "1.jpg",
-    "Internal ID": "6ce4b628-2bcc-4829-8c64-b3a71bf09a60"
-  }'
+        "seq": 994,
+        "name": "Portable Clock Drone Charger Clean Ultra",
+        "description": "Portable Clock Drone Charger Clean Ultra is a top product in our Accessories category.",
+        "brand": "Ruiz Group",
+        "category": "Accessories (Bags, Hats, Belts)",
+        "price": 562,
+        "currency": "USD",
+        "stock": 925,
+        "ean": "9133965711610",
+        "color": "LightSalmon",
+        "size": "30x40 cm",
+        "availability": "in_stock",
+        "shortDescription": "Most bar receive apply.",
+        "image": "14.jpg"
+      }'
