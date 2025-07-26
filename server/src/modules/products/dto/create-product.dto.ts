@@ -8,11 +8,15 @@ import {
   IsInt,
   IsPositive,
   IsIn,
+  IsDate,
   IsOptional,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
+  @IsDate()
+  createdAt: Date;
+
   @IsInt()
   @IsPositive()
   seq: number;

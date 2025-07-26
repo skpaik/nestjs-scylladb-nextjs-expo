@@ -9,7 +9,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const all_module_1 = require("./modules/all.module");
-const user_service_1 = require("./users/user.service");
 const cassandra_module_1 = require("./cassandra/cassandra.module");
 let AppModule = class AppModule {
 };
@@ -18,7 +17,7 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [all_module_1.AllModule, cassandra_module_1.CassandraModule],
         controllers: [],
-        providers: [user_service_1.UserService],
+        providers: [],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

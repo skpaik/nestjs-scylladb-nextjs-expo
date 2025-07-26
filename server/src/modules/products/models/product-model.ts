@@ -14,4 +14,5 @@ export class Product {
   availability: string;
   shortDescription: string;
   image: string;
+  createdAt: Date;
 }
