@@ -9,12 +9,6 @@ import {
   IsPositive,
   IsIn,
   IsOptional,
-  IsHexColor,
-  IsISO8601,
-  IsBoolean,
-  IsEnum,
-  IsDefined,
-  IsUrl,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
