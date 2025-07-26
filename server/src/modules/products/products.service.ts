@@ -4,10 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { Client, QueryOptions } from 'cassandra-driver';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CassandraService } from '../../cassandra/cassandra.service';
-import { Product } from './models/product-model';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchProductDto } from './dto/search-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
