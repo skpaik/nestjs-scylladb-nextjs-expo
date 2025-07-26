@@ -29,15 +29,6 @@ export class ProductsController {
     return this.productsService.create(createProductDto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.productsService.findAll();
-  // }
-  @Get('list')
-  async findAll2(): Promise<Product[]> {
-    return this.productsService.findAll2();
-  }
-
   @Get()
   @ApiOperation({ summary: 'Get all products with pagination and filtering' })
   @ApiResponse({ status: 200, description: 'Products retrieved successfully' })

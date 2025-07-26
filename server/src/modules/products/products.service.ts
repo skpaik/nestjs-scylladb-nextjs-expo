@@ -42,89 +42,6 @@ export class ProductsService {
     await client.execute(query, params, { prepare: true });
   }
 
-  /*
-  async findAll(): Promise<CreateProductDto[]> {
-    const client = this.cassandraService.getClient();
-
-    const query = 'SELECT * FROM products';
-
-    const result = await client.execute(query);
-
-    // Map rows to CreateProductDto format
-    return (result.rows as unknown as ProductRow[]).map((row) => {
-      const dto = new CreateProductDto();
-      dto.Name = row.name;
-      dto.Description = row.description;
-      dto.Brand = row.brand;
-      dto.Category = row.category;
-      dto.Price = row.price;
-      dto.Currency = row.currency;
-      dto.Stock = row.stock;
-      dto.EAN = row.ean;
-      dto.Color = row.color;
-      dto.Size = row.size;
-      dto.Availability = row.availability;
-      dto.ShortDescription = row.shortdescription;
-      dto.Image = row.image;
-      dto['Internal ID'] = row.id;
-
-      return dto;
-    });
-  }
-  */
-  // async findAll(query: ProductQueryDto) {
-  //   const {
-  //     page,
-  //     limit,
-  //     category,
-  //     brand,
-  //     minPrice,
-  //     maxPrice,
-  //     sortBy,
-  //     sortOrder,
-  //   } = query;
-  //   const skip = (page - 1) * limit;
-  //
-  //   const queryBuilder = this.productRepository.createQueryBuilder('product');
-  //
-  //   // Apply filters
-  //   if (category) {
-  //     queryBuilder.andWhere('product.category = :category', { category });
-  //   }
-  //
-  //   if (brand) {
-  //     queryBuilder.andWhere('product.brand = :brand', { brand });
-  //   }
-  //
-  //   if (minPrice !== undefined) {
-  //     queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
-  //   }
-  //
-  //   if (maxPrice !== undefined) {
-  //     queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
-  //   }
-  //
-  //   // Apply sorting
-  //   if (sortBy && ['name', 'price', 'createdAt'].includes(sortBy)) {
-  //     queryBuilder.orderBy(`product.${sortBy}`, sortOrder);
-  //   } else {
-  //     queryBuilder.orderBy('product.createdAt', 'DESC');
-  //   }
-  //
-  //   // Apply pagination
-  //   queryBuilder.skip(skip).take(limit);
-  //
-  //   const [items, total] = await queryBuilder.getManyAndCount();
-  //
-  //   return {
-  //     items,
-  //     total,
-  //     page,
-  //     limit,
-  //     totalPages: Math.ceil(total / limit),
-  //   };
-  // }
-
   async findAllPaginate(query: ProductQueryDto) {
     const client: Client = this.cassandraService.getClient();
 
@@ -200,30 +117,5 @@ export class ProductsService {
       pageSize,
       nextPageState: result.pageState || null,
     };
-  }
-
-  async findAll2(): Promise<Product[]> {
-    const client = this.cassandraService.getClient();
-    const result = await client.execute('SELECT * FROM products');
-
-    return (result.rows as unknown as CreateProductDto[]).map(
-      (row): Product => ({
-        internalId: row.internalId,
-        seq: row.seq,
-        name: row.name,
-        description: row.description,
-        brand: row.brand,
-        category: row.category,
-        price: row.price,
-        currency: row.currency,
-        stock: row.stock,
-        ean: row.ean,
-        color: row.color,
-        size: row.size,
-        availability: row.availability,
-        shortDescription: row.shortDescription,
-        image: row.image,
-      }),
-    );
   }
 }
