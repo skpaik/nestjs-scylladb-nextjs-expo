@@ -14,11 +14,11 @@ import { ScyllaOrmService } from '../../dbs/scylla-orm/scylla-orm.service';
 import { DbService } from '../../dbs/cassandra/DbService';
 
 @Injectable()
-export class ProductsService implements OnModuleInit{
-   constructor(
+export class ProductsService implements OnModuleInit {
+  constructor(
     private readonly dbService: CassandraService,
     private readonly orm: ScyllaOrmService,
-    private readonly db: DbService
+    private readonly db: DbService,
   ) {}
 
   onModuleInit() {
@@ -26,7 +26,7 @@ export class ProductsService implements OnModuleInit{
   }
 
   async create(data: CreateProductDto): Promise<string> {
-    const internalId= uuidv4();
+    const internalId = uuidv4();
     const product = Object.assign(new Product(), {
       ...data,
       internalId,
@@ -203,7 +203,7 @@ export class ProductsService implements OnModuleInit{
     const result = await this.dbService.executeQuery(
       query,
       ['in_stock'],
-      options
+      options,
     );
 
     const sortedItems = (result.rows as unknown as Product[])
@@ -229,7 +229,7 @@ export class ProductsService implements OnModuleInit{
     const result = await this.dbService.executeQuery(
       query,
       [category],
-      options
+      options,
     );
 
     const sortedItems = (result.rows as unknown as Product[])
@@ -243,10 +243,7 @@ export class ProductsService implements OnModuleInit{
     return sortedItems.map((row) => this.generateProduct(row));
   }
 
-  async findByBrand(
-    brand: string,
-    limit: number = 10,
-  ): Promise<Product[]> {
+  async findByBrand(brand: string, limit: number = 10): Promise<Product[]> {
     const query = 'SELECT * FROM products WHERE brand = ? ALLOW FILTERING';
 
     const options = {
@@ -309,7 +306,7 @@ export class ProductsService implements OnModuleInit{
     return Array.from(brands);
   }
 
-  async update(
+  async update2(
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
@@ -339,8 +336,25 @@ export class ProductsService implements OnModuleInit{
       updated.shortDescription,
       updated.image,
       updated.createdAt,
-      updated.internalId=id
+      (updated.internalId = id),
     ];
+    await this.dbService.executeQuery(query, params, { prepare: true });
+
+    return this.generateProduct(updated);
+  }
+
+  async update(
+    id: string,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
+    const existing = await this.findOne(id);
+    const updated = { ...existing, ...updateProductDto };
+    const updateData = Object.assign(new Product(), updated);
+
+    const { query, params } = this.orm.update<Product>(updateData, {
+      internalId: id,
+    });
+
     await this.dbService.executeQuery(query, params, { prepare: true });
 
     return this.generateProduct(updated);
@@ -376,7 +390,9 @@ export class ProductsService implements OnModuleInit{
 
   async findOne(id: string): Promise<Product> {
     const query = 'SELECT * FROM products WHERE internalId = ?';
-    const result = await this.dbService.executeQuery(query, [id], { prepare: true });
+    const result = await this.dbService.executeQuery(query, [id], {
+      prepare: true,
+    });
 
     if (result.rowLength === 0) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -389,7 +405,9 @@ export class ProductsService implements OnModuleInit{
   async findByInternalId(internalId: string): Promise<Product> {
     const query =
       'SELECT * FROM products WHERE "internalId" = ? ALLOW FILTERING';
-    const result = await this.dbService.executeQuery(query, [internalId], { prepare: true });
+    const result = await this.dbService.executeQuery(query, [internalId], {
+      prepare: true,
+    });
 
     if (result.rowLength === 0) {
       throw new NotFoundException(
@@ -408,7 +426,9 @@ export class ProductsService implements OnModuleInit{
       availability: stock > 0,
     });
 
-    const { query, params } = this.orm.update<Product>(updateData, { internalId: id });
+    const { query, params } = this.orm.update<Product>(updateData, {
+      internalId: id,
+    });
     await this.db.executeQuery(query, params);
   }
 

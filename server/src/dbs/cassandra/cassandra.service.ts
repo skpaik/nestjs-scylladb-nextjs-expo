@@ -36,6 +36,9 @@ export class CassandraService implements OnModuleInit, OnModuleDestroy {
     params?: ArrayOrObject,
     options?: QueryOptions,
   ): Promise<cassandraTypes.ResultSet> {
+    console.log('query : ', query);
+    console.log('params : ', params);
+
     return this.getClient().execute(query, params, options);
   }
 }

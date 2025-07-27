@@ -8,9 +8,9 @@ USE my_keyspace;
 
 CREATE TABLE IF NOT EXISTS products
 (
-    internal_id       UUID PRIMARY KEY,
+    internalId       UUID PRIMARY KEY,
     seq               INT,
-    created_at         DATE,
+    createdAt         DATE,
     name              TEXT,
     description       TEXT,
     brand             TEXT,
@@ -22,6 +22,6 @@ CREATE TABLE IF NOT EXISTS products
     color             TEXT,
     size              TEXT,
     availability      TEXT,
-    short_description TEXT,
+    shortDescription TEXT,
     image             TEXT
 );
