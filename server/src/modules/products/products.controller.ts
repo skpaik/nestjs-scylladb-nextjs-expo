@@ -29,8 +29,10 @@ export class ProductsController {
   @ApiOperation({ summary: 'Create a new product' })
   @ApiResponse({ status: 201, description: 'Product created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() createProductDto: CreateProductDto) {
-    return this.productsService.create(createProductDto);
+  async create(@Body() createProductDto: CreateProductDto): Promise<string> {
+    const newProduct = await this.productsService.create(createProductDto);
+    console.log(newProduct);
+    return newProduct;
   }
 
   @Get()

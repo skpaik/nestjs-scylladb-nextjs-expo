@@ -2,16 +2,20 @@
 
 BASE_URL="http://localhost:3000/products"
 PRODUCT_JSON=$(cat product.json)
-ID="29d62163-d313-42ca-b96a-b9cc1e79c0ab"
-INTERNAL_ID="29d62163-d313-42ca-b96a-b9cc1e79c0ab"
 
 echo "=== GET all products ==="
 curl -s "$BASE_URL" | jq
 
 echo "=== POST new product ==="
-curl -s -X POST "$BASE_URL" \
+POST_RESPONSE=$(curl -s -X POST "$BASE_URL" \
   -H "Content-Type: application/json" \
-  -d "$PRODUCT_JSON" | jq
+  -d "$PRODUCT_JSON")
+
+echo "$POST_RESPONSE"
+
+# Since response is a raw UUID string:
+ID="$POST_RESPONSE"
+INTERNAL_ID="$POST_RESPONSE"
 
 echo "=== GET product by ID ==="
 curl -s "$BASE_URL/$ID" | jq

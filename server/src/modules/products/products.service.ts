@@ -13,7 +13,7 @@ import { Product } from './entities/product.entity';
 export class ProductsService {
   constructor(private readonly cassandraService: CassandraService) {}
 
-  async create(data: CreateProductDto): Promise<void> {
+  async create(data: CreateProductDto): Promise<string> {
     const client = this.cassandraService.getClient();
 
     const query = `
@@ -21,9 +21,9 @@ export class ProductsService {
                               stock, ean, color, size, availability, short_description, image)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
-
+    const newInterId = uuidv4();
     const params = [
-      uuidv4(),
+      newInterId,
       data.seq,
       data.name,
       data.description,
@@ -41,6 +41,8 @@ export class ProductsService {
     ];
 
     await client.execute(query, params, { prepare: true });
+
+    return newInterId;
   }
 
   async findAllPaginate(query: ProductQueryDto) {
