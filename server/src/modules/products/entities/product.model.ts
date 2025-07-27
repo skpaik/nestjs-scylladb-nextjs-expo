@@ -1,8 +1,13 @@
-export class ProductOld {
-  internalId?: string;
+// models/product.model.ts
+
+import { ScyllaSchema } from '../../../dbs/scylla-orm/schema.decorator';
+
+@ScyllaSchema('products')
+export class Product {
+  internalId: string;
   seq: number;
   name: string;
-  description: string;
+  description?: string;
   brand: string;
   category: string;
   price: number;

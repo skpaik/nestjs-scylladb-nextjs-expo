@@ -1,6 +1,11 @@
 // FIle: cassandra.service.ts
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { Client } from 'cassandra-driver';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  ArrayOrObject,
+  Client,
+  QueryOptions,
+  types as cassandraTypes,
+} from 'cassandra-driver';
 
 @Injectable()
 export class CassandraService implements OnModuleInit, OnModuleDestroy {
@@ -24,5 +29,13 @@ export class CassandraService implements OnModuleInit, OnModuleDestroy {
   async onModuleDestroy() {
     await this.client.shutdown();
     console.log('Disconnected from Cassandra');
+  }
+
+  executeQuery(
+    query: string,
+    params?: ArrayOrObject,
+    options?: QueryOptions,
+  ): Promise<cassandraTypes.ResultSet> {
+    return this.getClient().execute(query, params, options);
   }
 }

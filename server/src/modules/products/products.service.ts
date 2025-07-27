@@ -2,45 +2,42 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { QueryOptions } from 'cassandra-driver';
+// product.service.ts
+import { OnModuleInit } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { CassandraService } from '../../cassandra/cassandra.service';
+import { CassandraService } from '../../dbs/cassandra/cassandra.service';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchProductDto } from './dto/search-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { Product } from './entities/product.entity';
+import { Product } from './entities/product.model';
+import { ScyllaOrmService } from '../../dbs/scylla-orm/scylla-orm.service';
+import { DbService } from '../../dbs/cassandra/DbService';
 
 @Injectable()
-export class ProductsService {
-  constructor(private readonly dbService: CassandraService) {}
+export class ProductsService implements OnModuleInit{
+   constructor(
+    private readonly dbService: CassandraService,
+    private readonly orm: ScyllaOrmService,
+    private readonly db: DbService
+  ) {}
+
+  onModuleInit() {
+    this.orm.registerSchema(Product);
+  }
 
   async create(data: CreateProductDto): Promise<string> {
-    const query = `
-        INSERT INTO products (internal_id, seq, name, description, brand, category, price, currency,
-                              stock, ean, color, size, availability, short_description, image)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    `;
-    const newInterId = uuidv4();
-    const params = [
-      newInterId,
-      data.seq,
-      data.name,
-      data.description,
-      data.brand,
-      data.category,
-      data.price,
-      data.currency,
-      data.stock,
-      data.ean,
-      data.color,
-      data.size,
-      data.availability,
-      data.shortDescription,
-      data.image,
-    ];
+    const internalId= uuidv4();
+    const product = Object.assign(new Product(), {
+      ...data,
+      internalId,
+      createdAt: new Date(),
+    });
 
-    await this.dbService.executeQuery(query, params, { prepare: true });
+    const { query, params } = this.orm.insert<Product>(product);
 
-    return newInterId;
+    await this.db.executeQuery(query, params, { prepare: true });
+
+    return internalId;
   }
 
   async findAllPaginate(query: ProductQueryDto) {
@@ -94,7 +91,7 @@ export class ProductsService {
       options,
     );
 
-    const items: CreateProductDto[] = (result.rows as unknown as Product[]).map(
+    const items: Product[] = (result.rows as unknown as Product[]).map(
       (row) => {
         return this.generateProduct(row);
       },
@@ -109,26 +106,6 @@ export class ProductsService {
 
   private generateProduct(row: Product) {
     return row;
-  }
-
-  private generateProduct2(row: Product) {
-    const dto = new CreateProductDto();
-    dto.internalId = row.internalId;
-    dto.name = row.name;
-    dto.description = row.description;
-    dto.brand = row.brand;
-    dto.category = row.category;
-    dto.price = row.price;
-    dto.currency = row.currency;
-    dto.stock = row.stock;
-    dto.ean = row.ean;
-    dto.color = row.color;
-    dto.size = row.size;
-    dto.availability = row.availability;
-    dto.shortDescription = row.shortDescription;
-    dto.image = row.image;
-    //dto['Internal ID'] = row.id;
-    return dto;
   }
 
   async search(searchDto: SearchProductDto) {
@@ -192,7 +169,7 @@ export class ProductsService {
     };
   }
 
-  async findLatest(limit: number = 10): Promise<CreateProductDto[]> {
+  async findLatest(limit: number = 10): Promise<Product[]> {
     const query = 'SELECT * FROM products';
     const options: QueryOptions = {
       prepare: true,
@@ -214,7 +191,7 @@ export class ProductsService {
     });
   }
 
-  async findFeatured(limit: number = 10): Promise<CreateProductDto[]> {
+  async findFeatured(limit: number = 10): Promise<Product[]> {
     const query =
       'SELECT * FROM products WHERE availability = ? ALLOW FILTERING';
 
@@ -241,7 +218,7 @@ export class ProductsService {
   async findByCategory(
     category: string,
     limit: number = 10,
-  ): Promise<CreateProductDto[]> {
+  ): Promise<Product[]> {
     const query = 'SELECT * FROM products WHERE category = ? ALLOW FILTERING';
 
     const options: QueryOptions = {
@@ -269,7 +246,7 @@ export class ProductsService {
   async findByBrand(
     brand: string,
     limit: number = 10,
-  ): Promise<CreateProductDto[]> {
+  ): Promise<Product[]> {
     const query = 'SELECT * FROM products WHERE brand = ? ALLOW FILTERING';
 
     const options = {
@@ -343,8 +320,8 @@ export class ProductsService {
     UPDATE products SET
       name = ?, description = ?, brand = ?, category = ?, price = ?,
       currency = ?, stock = ?, ean = ?, color = ?, size = ?, availability = ?,
-      short_description = ?, image = ?, created_at = ?
-    WHERE internal_id = ?
+      shortDescription = ?, image = ?, createdAt = ?
+    WHERE internalId = ?
   `;
 
     const params = [
@@ -370,11 +347,11 @@ export class ProductsService {
   }
 
   async remove(id: string): Promise<void> {
-    const query = 'DELETE FROM products WHERE internal_id = ?';
+    const query = 'DELETE FROM products WHERE internalId = ?';
     await this.dbService.executeQuery(query, [id], { prepare: true });
   }
 
-  async updateStock(id: string, quantity: number): Promise<CreateProductDto> {
+  async updateStock2(id: string, quantity: number): Promise<Product> {
     const product = await this.findOne(id);
     product.stock = quantity;
 
@@ -387,7 +364,7 @@ export class ProductsService {
     }
 
     const query = `
-    UPDATE products SET stock = ?, availability = ? WHERE internal_id = ?
+    UPDATE products SET stock = ?, availability = ? WHERE internalId = ?
   `;
 
     const params = [product.stock, product.availability, id];
@@ -397,8 +374,8 @@ export class ProductsService {
     return this.generateProduct(product);
   }
 
-  async findOne(id: string): Promise<CreateProductDto> {
-    const query = 'SELECT * FROM products WHERE internal_id = ?';
+  async findOne(id: string): Promise<Product> {
+    const query = 'SELECT * FROM products WHERE internalId = ?';
     const result = await this.dbService.executeQuery(query, [id], { prepare: true });
 
     if (result.rowLength === 0) {
@@ -411,7 +388,7 @@ export class ProductsService {
   }
   async findByInternalId(internalId: string): Promise<Product> {
     const query =
-      'SELECT * FROM products WHERE "internal_id" = ? ALLOW FILTERING';
+      'SELECT * FROM products WHERE "internalId" = ? ALLOW FILTERING';
     const result = await this.dbService.executeQuery(query, [internalId], { prepare: true });
 
     if (result.rowLength === 0) {
@@ -423,5 +400,21 @@ export class ProductsService {
     const row = result.first();
 
     return this.generateProduct(row as unknown as Product);
+  }
+
+  async updateStock(id: string, stock: number) {
+    const updateData = Object.assign(new Product(), {
+      stock,
+      availability: stock > 0,
+    });
+
+    const { query, params } = this.orm.update<Product>(updateData, { internalId: id });
+    await this.db.executeQuery(query, params);
+  }
+
+  async deleteProduct(id: string) {
+    const query = 'DELETE FROM products WHERE internalId = ?';
+    const params = this.orm.mapQueryParams(query, { internalId: id });
+    await this.db.executeQuery(query, params);
   }
 }

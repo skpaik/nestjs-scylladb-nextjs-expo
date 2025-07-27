@@ -9,13 +9,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const all_module_1 = require("./modules/all.module");
-const cassandra_module_1 = require("./cassandra/cassandra.module");
+const cassandra_module_1 = require("./dbs/cassandra/cassandra.module");
+const scylla_orm_module_1 = require("./dbs/scylla-orm/scylla-orm.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [all_module_1.AllModule, cassandra_module_1.CassandraModule],
+        imports: [all_module_1.AllModule, cassandra_module_1.CassandraModule, scylla_orm_module_1.ScyllaOrmModule],
         controllers: [],
         providers: [],
     })

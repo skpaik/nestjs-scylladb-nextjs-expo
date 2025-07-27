@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { CassandraService } from '../../cassandra/cassandra.service';
+import { CassandraService } from '../../dbs/cassandra/cassandra.service';
 import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
