@@ -1,7 +1,7 @@
 // src/products/products.service.ts
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { Client, QueryOptions } from 'cassandra-driver';
+import { QueryOptions } from 'cassandra-driver';
 import { CreateProductDto } from './dto/create-product.dto';
 import { CassandraService } from '../../cassandra/cassandra.service';
 import { ProductQueryDto } from './dto/product-query.dto';
@@ -11,11 +11,9 @@ import { Product } from './entities/product.entity';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly cassandraService: CassandraService) {}
+  constructor(private readonly dbService: CassandraService) {}
 
   async create(data: CreateProductDto): Promise<string> {
-    const client = this.cassandraService.getClient();
-
     const query = `
         INSERT INTO products (internal_id, seq, name, description, brand, category, price, currency,
                               stock, ean, color, size, availability, short_description, image)
@@ -40,14 +38,12 @@ export class ProductsService {
       data.image,
     ];
 
-    await client.execute(query, params, { prepare: true });
+    await this.dbService.executeQuery(query, params, { prepare: true });
 
     return newInterId;
   }
 
   async findAllPaginate(query: ProductQueryDto) {
-    const client: Client = this.cassandraService.getClient();
-
     const {
       pageSize = 10,
       pagingState,
@@ -92,7 +88,11 @@ export class ProductsService {
       ...(pagingState && { pagingState }),
     };
 
-    const result = await client.execute(queryText, queryParams, options);
+    const result = await this.dbService.executeQuery(
+      queryText,
+      queryParams,
+      options,
+    );
 
     const items: CreateProductDto[] = (result.rows as unknown as Product[]).map(
       (row) => {
@@ -134,8 +134,6 @@ export class ProductsService {
   async search(searchDto: SearchProductDto) {
     const { q, pageSize = 10, pagingState, category, brand } = searchDto;
 
-    const client: Client = this.cassandraService.getClient();
-
     // Build CQL query
     let queryText = 'SELECT * FROM products';
     const queryParams: any[] = [];
@@ -161,7 +159,11 @@ export class ProductsService {
       ...(pagingState && { pagingState }),
     };
 
-    const result = await client.execute(queryText, queryParams, options);
+    const result = await this.dbService.executeQuery(
+      queryText,
+      queryParams,
+      options,
+    );
 
     // Filter rows in-memory using q (case-insensitive search)
     const searchTerm = q?.toLowerCase() ?? '';
@@ -191,15 +193,13 @@ export class ProductsService {
   }
 
   async findLatest(limit: number = 10): Promise<CreateProductDto[]> {
-    const client: Client = this.cassandraService.getClient();
-
     const query = 'SELECT * FROM products';
     const options: QueryOptions = {
       prepare: true,
       fetchSize: 100, // Fetch more than needed to filter/sort
     };
 
-    const result = await client.execute(query, [], options);
+    const result = await this.dbService.executeQuery(query, [], options);
 
     const products = (result.rows as unknown as Product[])
       .filter((row) => row.createdAt)
@@ -215,8 +215,6 @@ export class ProductsService {
   }
 
   async findFeatured(limit: number = 10): Promise<CreateProductDto[]> {
-    const client: Client = this.cassandraService.getClient();
-
     const query =
       'SELECT * FROM products WHERE availability = ? ALLOW FILTERING';
 
@@ -225,7 +223,11 @@ export class ProductsService {
       fetchSize: 100, // fetch more than `limit` to sort in-memory
     };
 
-    const result = await client.execute(query, ['in_stock'], options);
+    const result = await this.dbService.executeQuery(
+      query,
+      ['in_stock'],
+      options
+    );
 
     const sortedItems = (result.rows as unknown as Product[])
       .sort((a, b) => (b.stock || 0) - (a.stock || 0)) // highest stock first
@@ -240,8 +242,6 @@ export class ProductsService {
     category: string,
     limit: number = 10,
   ): Promise<CreateProductDto[]> {
-    const client: Client = this.cassandraService.getClient();
-
     const query = 'SELECT * FROM products WHERE category = ? ALLOW FILTERING';
 
     const options: QueryOptions = {
@@ -249,7 +249,11 @@ export class ProductsService {
       fetchSize: 100, // Fetch more to sort/filter in-memory
     };
 
-    const result = await client.execute(query, [category], options);
+    const result = await this.dbService.executeQuery(
+      query,
+      [category],
+      options
+    );
 
     const sortedItems = (result.rows as unknown as Product[])
       .filter((row) => row.createdAt) // only rows with createdAt
@@ -266,8 +270,6 @@ export class ProductsService {
     brand: string,
     limit: number = 10,
   ): Promise<CreateProductDto[]> {
-    const client = this.cassandraService.getClient();
-
     const query = 'SELECT * FROM products WHERE brand = ? ALLOW FILTERING';
 
     const options = {
@@ -275,7 +277,7 @@ export class ProductsService {
       fetchSize: 100,
     };
 
-    const result = await client.execute(query, [brand], options);
+    const result = await this.dbService.executeQuery(query, [brand], options);
 
     const sortedItems = (result.rows as unknown as Product[])
       .filter((row) => row.createdAt)
@@ -289,8 +291,6 @@ export class ProductsService {
   }
 
   async getCategories(): Promise<string[]> {
-    const client = this.cassandraService.getClient();
-
     const query = 'SELECT category FROM products ALLOW FILTERING';
 
     const options = {
@@ -298,7 +298,7 @@ export class ProductsService {
       fetchSize: 500,
     };
 
-    const result = await client.execute(query, [], options);
+    const result = await this.dbService.executeQuery(query, [], options);
 
     const categories = new Set<string>();
 
@@ -312,8 +312,6 @@ export class ProductsService {
   }
 
   async getBrands(): Promise<string[]> {
-    const client = this.cassandraService.getClient();
-
     const query = 'SELECT brand FROM products ALLOW FILTERING';
 
     const options = {
@@ -321,7 +319,7 @@ export class ProductsService {
       fetchSize: 500,
     };
 
-    const result = await client.execute(query, [], options);
+    const result = await this.dbService.executeQuery(query, [], options);
 
     const brands = new Set<string>();
 
@@ -338,8 +336,6 @@ export class ProductsService {
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<Product> {
-    const client = this.cassandraService.getClient();
-
     const existing = await this.findOne(id);
     const updated = { ...existing, ...updateProductDto };
 
@@ -366,23 +362,19 @@ export class ProductsService {
       updated.shortDescription,
       updated.image,
       updated.createdAt,
+      updated.internalId=id
     ];
-
-    await client.execute(query, params, { prepare: true });
+    await this.dbService.executeQuery(query, params, { prepare: true });
 
     return this.generateProduct(updated);
   }
 
   async remove(id: string): Promise<void> {
-    const client = this.cassandraService.getClient();
-
     const query = 'DELETE FROM products WHERE internal_id = ?';
-    await client.execute(query, [id], { prepare: true });
+    await this.dbService.executeQuery(query, [id], { prepare: true });
   }
 
   async updateStock(id: string, quantity: number): Promise<CreateProductDto> {
-    const client = this.cassandraService.getClient();
-
     const product = await this.findOne(id);
     product.stock = quantity;
 
@@ -400,16 +392,14 @@ export class ProductsService {
 
     const params = [product.stock, product.availability, id];
 
-    await client.execute(query, params, { prepare: true });
+    await this.dbService.executeQuery(query, params, { prepare: true });
 
     return this.generateProduct(product);
   }
 
   async findOne(id: string): Promise<CreateProductDto> {
-    const client = this.cassandraService.getClient();
-
     const query = 'SELECT * FROM products WHERE internal_id = ?';
-    const result = await client.execute(query, [id], { prepare: true });
+    const result = await this.dbService.executeQuery(query, [id], { prepare: true });
 
     if (result.rowLength === 0) {
       throw new NotFoundException(`Product with ID ${id} not found`);
@@ -420,11 +410,9 @@ export class ProductsService {
     return this.generateProduct(row as unknown as Product);
   }
   async findByInternalId(internalId: string): Promise<Product> {
-    const client = this.cassandraService.getClient();
-
     const query =
       'SELECT * FROM products WHERE "internal_id" = ? ALLOW FILTERING';
-    const result = await client.execute(query, [internalId], { prepare: true });
+    const result = await this.dbService.executeQuery(query, [internalId], { prepare: true });
 
     if (result.rowLength === 0) {
       throw new NotFoundException(
