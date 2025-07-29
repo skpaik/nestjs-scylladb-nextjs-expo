@@ -1,5 +1,5 @@
 export class ProductOld {
-  internalId?: string;
+  id?: string;
   seq: number;
   name: string;
   description: string;

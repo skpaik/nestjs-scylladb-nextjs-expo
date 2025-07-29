@@ -1,11 +1,8 @@
 // src/products/products.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 import { QueryOptions } from 'cassandra-driver';
-// product.service.ts
-import { OnModuleInit } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
-import { CassandraService } from '../../dbs/cassandra/cassandra.service';
 import { ProductQueryDto } from './dto/product-query.dto';
 import { SearchProductDto } from './dto/search-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -16,9 +13,8 @@ import { DbService } from '../../dbs/cassandra/DbService';
 @Injectable()
 export class ProductsService implements OnModuleInit {
   constructor(
-    private readonly dbService: CassandraService,
     private readonly orm: ScyllaOrmService,
-    private readonly db: DbService,
+    private readonly dbService: DbService,
   ) {}
 
   onModuleInit() {
@@ -26,18 +22,18 @@ export class ProductsService implements OnModuleInit {
   }
 
   async create(data: CreateProductDto): Promise<string> {
-    const internalId = uuidv4();
+    const id = uuidv4();
     const product = Object.assign(new Product(), {
       ...data,
-      internalId,
+      id,
       createdAt: new Date(),
     });
 
     const { query, params } = this.orm.insert<Product>(product);
 
-    await this.db.executeQuery(query, params, { prepare: true });
+    await this.dbService.executeQuery(query, params, { prepare: true });
 
-    return internalId;
+    return id;
   }
 
   async findAllPaginate(query: ProductQueryDto) {
@@ -318,7 +314,7 @@ export class ProductsService implements OnModuleInit {
       name = ?, description = ?, brand = ?, category = ?, price = ?,
       currency = ?, stock = ?, ean = ?, color = ?, size = ?, availability = ?,
       shortDescription = ?, image = ?, createdAt = ?
-    WHERE internalId = ?
+    WHERE id = ?
   `;
 
     const params = [
@@ -336,7 +332,7 @@ export class ProductsService implements OnModuleInit {
       updated.shortDescription,
       updated.image,
       updated.createdAt,
-      (updated.internalId = id),
+      (updated.id = id),
     ];
     await this.dbService.executeQuery(query, params, { prepare: true });
 
@@ -352,7 +348,7 @@ export class ProductsService implements OnModuleInit {
     const updateData = Object.assign(new Product(), updated);
 
     const { query, params } = this.orm.update<Product>(updateData, {
-      internalId: id,
+      id: id,
     });
 
     await this.dbService.executeQuery(query, params, { prepare: true });
@@ -361,7 +357,7 @@ export class ProductsService implements OnModuleInit {
   }
 
   async remove(id: string): Promise<void> {
-    const query = 'DELETE FROM products WHERE internalId = ?';
+    const query = 'DELETE FROM products WHERE id = ?';
     await this.dbService.executeQuery(query, [id], { prepare: true });
   }
 
@@ -369,16 +365,10 @@ export class ProductsService implements OnModuleInit {
     const product = await this.findOne(id);
     product.stock = quantity;
 
-    if (quantity === 0) {
-      product.availability = 'out_of_stock';
-    } else if (quantity < 20) {
-      product.availability = 'low_stock';
-    } else {
-      product.availability = 'in_stock';
-    }
+    product.availability = this.checkAvailability(quantity);
 
     const query = `
-    UPDATE products SET stock = ?, availability = ? WHERE internalId = ?
+    UPDATE products SET stock = ?, availability = ? WHERE id = ?
   `;
 
     const params = [product.stock, product.availability, id];
@@ -388,8 +378,18 @@ export class ProductsService implements OnModuleInit {
     return this.generateProduct(product);
   }
 
+  private checkAvailability(quantity: number) {
+    let availability = 'in_stock';
+    if (quantity === 0) {
+      availability = 'out_of_stock';
+    } else if (quantity < 20) {
+      availability = 'low_stock';
+    }
+    return availability;
+  }
+
   async findOne(id: string): Promise<Product> {
-    const query = 'SELECT * FROM products WHERE internalId = ?';
+    const query = 'SELECT * FROM products WHERE id = ?';
     const result = await this.dbService.executeQuery(query, [id], {
       prepare: true,
     });
@@ -402,17 +402,14 @@ export class ProductsService implements OnModuleInit {
 
     return this.generateProduct(row as unknown as Product);
   }
-  async findByInternalId(internalId: string): Promise<Product> {
-    const query =
-      'SELECT * FROM products WHERE "internalId" = ? ALLOW FILTERING';
-    const result = await this.dbService.executeQuery(query, [internalId], {
+  async findById(id: string): Promise<Product> {
+    const query = 'SELECT * FROM products WHERE "id" = ? ALLOW FILTERING';
+    const result = await this.dbService.executeQuery(query, [id], {
       prepare: true,
     });
 
     if (result.rowLength === 0) {
-      throw new NotFoundException(
-        `Product with internal ID ${internalId} not found`,
-      );
+      throw new NotFoundException(`Product with internal ID ${id} not found`);
     }
 
     const row = result.first();
@@ -421,20 +418,29 @@ export class ProductsService implements OnModuleInit {
   }
 
   async updateStock(id: string, stock: number) {
-    const updateData = Object.assign(new Product(), {
-      stock,
-      availability: stock > 0,
-    });
+    const existing = await this.findOne(id);
+
+    const availability = this.checkAvailability(stock);
+
+    const updated = {
+      ...existing,
+      ...{
+        stock,
+        availability,
+      },
+    };
+    const updateData = Object.assign(new Product(), updated);
 
     const { query, params } = this.orm.update<Product>(updateData, {
-      internalId: id,
+      id: id,
     });
-    await this.db.executeQuery(query, params);
+
+    await this.dbService.executeQuery(query, params, { prepare: true });
   }
 
   async deleteProduct(id: string) {
-    const query = 'DELETE FROM products WHERE internalId = ?';
-    const params = this.orm.mapQueryParams(query, { internalId: id });
-    await this.db.executeQuery(query, params);
+    const query = 'DELETE FROM products WHERE id = ?';
+    const params = this.orm.mapQueryParams(query, { id: id });
+    await this.dbService.executeQuery(query, params);
   }
 }

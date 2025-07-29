@@ -136,12 +136,12 @@ export class ProductsController {
     return this.productsService.findByBrand(brand, query.limit);
   }
 
-  @Get('internal/:internalId')
+  @Get('internal/:id')
   @ApiOperation({ summary: 'Get product by internal ID' })
   @ApiResponse({ status: 200, description: 'Product retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  findByInternalId(@Param('internalId') internalId: string) {
-    return this.productsService.findByInternalId(internalId);
+  findById(@Param('id') id: string) {
+    return this.productsService.findById(id);
   }
 
   @Get(':id')
