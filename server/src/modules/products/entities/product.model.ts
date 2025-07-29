@@ -4,7 +4,7 @@ import { ScyllaSchema } from '../../../dbs/scylla-orm/schema.decorator';
 
 @ScyllaSchema('products')
 export class Product {
-  internalId: string;
+  id: string;
   seq: number;
   name: string;
   description?: string;

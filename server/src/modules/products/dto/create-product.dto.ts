@@ -73,9 +73,4 @@ export class CreateProductDto {
   @IsString()
   @IsNotEmpty()
   image: string;
-
-  // Optional: Allow the frontend to specify internal ID (e.g. for tests)
-  @IsOptional()
-  @IsUUID()
-  internalId?: string;
 }
