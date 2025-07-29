@@ -1,0 +1,45 @@
+services:
+  scylladb:
+    image: scylladb/scylla:5.4
+    container_name: scylladb
+    restart: unless-stopped
+    ports:
+      - "9042:9042"
+    command: --smp 1 --memory 512M
+    healthcheck:
+      test: ["CMD", "cqlsh", "-e", "SELECT now() FROM system.local"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+
+  init-scylla:
+    image: scylladb/scylla:5.4
+    container_name: init-scylla
+    depends_on:
+      scylladb:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init.cql:/init/init.cql:ro
+      - ./scripts/init-scylla.sh:/init/init-scylla.sh:ro
+    entrypoint: ["sh", "/init/init-scylla.sh"]
+    restart: "no"
+
+
+  # You will add your NestJS app here later:
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: ecommerce-app
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - scylladb
+  #   networks:
+  #     - ecommerce-network
+  #   restart: unless-stopped
+
+
+networks:
+  ecommerce-network:
+    driver: bridge
