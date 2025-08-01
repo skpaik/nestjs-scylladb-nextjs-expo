@@ -1,6 +1,6 @@
 # E-commerce Full-Stack Application
 
-A modern full-stack e-commerce application built with NestJS, Next.js, and Expo. This project features a scalable architecture with a ScyllaDB database, comprehensive API documentation, and cross-platform mobile support.
+A modern full-stack e-commerce application built with **NestJS**, **Next.js**, and **Expo**. This project features a scalable architecture with a ScyllaDB database, comprehensive API documentation, and cross-platform mobile support.
 
 ## 🏗️ Project Architecture
 
@@ -14,7 +14,7 @@ This project consists of three main components:
 
 ```
 nestjs-scylladb-nextjs-expo/
-├── server/          # NestJS backend with ScyllaDB
+├── server/         # NestJS backend with ScyllaDB
 ├── web/            # Next.js web frontend
 └── mobile/         # Expo React Native mobile app
 ```
